@@ -40,7 +40,7 @@ int decap(struct xdp_md* ctx) {
         return XDP_DROP;
     }
 
-    if (old_udph->source == ENCAP_PORT && old_udph->dest == ENCAP_PORT) {
+    if (old_udph->source == bpf_ntohs(ENCAP_PORT) && old_udph->dest == bpf_ntohs(ENCAP_PORT)) {
         // Decap
         bpf_printk("Received packet. Decap...");
         if (bpf_xdp_adjust_head(ctx, sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr))) {
