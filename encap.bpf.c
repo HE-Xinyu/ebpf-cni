@@ -204,6 +204,8 @@ int encap(struct xdp_md* ctx) {
     ihdr->saddr = CURR_NODE_IP;
     ihdr->daddr = OTHER_NODE_IP;
     ihdr->protocol = IPPROTO_UDP;
+    // assume ip header is fixed 20 bytes
+    ihdr->tot_len = bpf_htons(20 + sizeof(struct udphdr) + (old_data_end - old_data));
     ihdr->version = 4;
     ihdr->ihl = 5;
     ihdr->id = bpf_htons(id);
