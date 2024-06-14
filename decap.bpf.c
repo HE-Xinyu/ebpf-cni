@@ -42,6 +42,7 @@ int decap(struct xdp_md* ctx) {
 
     if (old_udph->source == ENCAP_PORT && old_udph->dest == ENCAP_PORT) {
         // Decap
+        bpf_printk("Received packet. Decap...");
         if (bpf_xdp_adjust_head(ctx, sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr))) {
             // fail to decap head
             bpf_printk("error");

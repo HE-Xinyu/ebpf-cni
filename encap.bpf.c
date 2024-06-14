@@ -149,17 +149,23 @@ unsigned char lookup_icmp_protocol(struct xdp_md* ctx) {
 
 SEC("xdp_encap")                                     
 int encap(struct xdp_md* ctx) {                           
+    bpf_printk("Starting encap 1...");
     void *old_data = (void *)(long)ctx->data;                                    
     void *old_data_end = (void *)(long)ctx->data_end;
     struct ethhdr *old_eth = old_data;                                               
 
-    if (old_data + sizeof(struct ethhdr) > old_data_end)                             
-        return XDP_PASS;
-
-    // only encap IP packet
-    if (old_eth->h_proto != ETH_P_IP) {
+    if (old_data + sizeof(struct ethhdr) > old_data_end) {
+        bpf_printk("Not eth");
         return XDP_PASS;
     }
+
+    // only encap IP packet
+    if (bpf_ntohs(old_eth->h_proto) != ETH_P_IP) {
+        bpf_printk("Not IP: 0x%x", old_eth->h_proto);
+        return XDP_PASS;
+    }
+
+    bpf_printk("Starting encap...");
 
     struct iphdr *old_iph = old_data + sizeof(struct ethhdr);                     
     if (old_data + sizeof(struct ethhdr) + sizeof(struct iphdr) > old_data_end) {
@@ -186,7 +192,7 @@ int encap(struct xdp_md* ctx) {
     struct udphdr* uhdr = data + sizeof(struct ethhdr) + sizeof(struct iphdr);
 
     // 1. ethernet header encap
-    ehdr->h_proto = ETH_P_IP;
+    ehdr->h_proto = bpf_htons(ETH_P_IP);
     int i = 0;
     for (i = 0; i < 6; i++) {
         ehdr->h_source[i] = CURR_NODE_MAC[i];
@@ -194,22 +200,25 @@ int encap(struct xdp_md* ctx) {
     }
 
     // 2. ip header encap
+    // ip already htons
     ihdr->saddr = CURR_NODE_IP;
     ihdr->daddr = OTHER_NODE_IP;
     ihdr->protocol = IPPROTO_UDP;
     ihdr->version = 4;
     ihdr->ihl = 5;
-    ihdr->id = id;
+    ihdr->id = bpf_htons(id);
     id = (id + 1) & 0xffff;
 
     ihdr->ttl = 64;
-    iph_csum(ihdr);
+    ihdr->check = iph_csum(ihdr);
 
     // 3. udp header encap
-    uhdr->source = ENCAP_PORT;
-    uhdr->dest = ENCAP_PORT;
-    uhdr->len = sizeof(struct udphdr) + (old_data_end - old_data);
+    uhdr->source = bpf_htons(ENCAP_PORT);
+    uhdr->dest = bpf_htons(ENCAP_PORT);
+    uhdr->len = bpf_htons(sizeof(struct udphdr) + (old_data_end - old_data));
     uhdr->check = caludpcsum(ihdr, uhdr, data_end);
+
+    bpf_printk("Encap done");
 
     return XDP_PASS;
 
