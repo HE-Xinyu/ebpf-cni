@@ -19,7 +19,7 @@ int decap(struct xdp_md* ctx) {
         return XDP_PASS;
 
     // only encap IP packet
-    if (old_eth->h_proto != ETH_P_IP) {
+    if (old_eth->h_proto != bpf_ntohs(ETH_P_IP)) {
         return XDP_PASS;
     }
 

@@ -161,7 +161,7 @@ int encap(struct xdp_md* ctx) {
 
     // only encap IP packet
     if (bpf_ntohs(old_eth->h_proto) != ETH_P_IP) {
-        bpf_printk("Not IP: 0x%x", old_eth->h_proto);
+        bpf_printk("Not IP: 0x%x", bpf_ntohs(old_eth->h_proto));
         return XDP_PASS;
     }
 
