@@ -53,7 +53,12 @@ int decap(struct xdp_md* ctx) {
 
         // assume veth-1 ifindex = 3
         int ret = bpf_redirect(3, 0);
-        return XDP_PASS;
+
+        if (ret != XDP_REDIRECT) {
+            bpf_printk("decap redirect %d", ret);
+        }
+
+        return ret;
     }
     else {
         // normal UDP packet.
