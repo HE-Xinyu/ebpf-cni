@@ -50,6 +50,9 @@ int decap(struct xdp_md* ctx) {
             bpf_printk("error");
             return XDP_DROP;
         }
+
+        // assume veth-1 ifindex = 3
+        int ret = bpf_redirect(3, 0);
         return XDP_PASS;
     }
     else {
