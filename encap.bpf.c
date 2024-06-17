@@ -221,14 +221,15 @@ int encap(struct xdp_md* ctx) {
     uhdr->check = caludpcsum(ihdr, uhdr, data_end);
 
     bpf_printk("Encap done");
+    return XDP_PASS;
     // assume the eth0 with index 2
-    int ret = bpf_redirect(2, 0);
+    // int ret = bpf_redirect(2, 0);
 
-    if (ret != XDP_REDIRECT) {
-        bpf_printk("Error redirect %d", ret);
-    }
+    // if (ret != XDP_REDIRECT) {
+    //     bpf_printk("Error redirect %d", ret);
+    // }
 
-    return ret;
+    // return ret;
 
 
     
