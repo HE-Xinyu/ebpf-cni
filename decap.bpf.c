@@ -52,14 +52,14 @@ int decap(struct xdp_md* ctx) {
         }
 
         // assume veth-1 ifindex = 3
-        // int ret = bpf_redirect(3, 0);
+        int ret = bpf_redirect(3, 0);
 
-        // if (ret != XDP_REDIRECT) {
-        //     bpf_printk("decap redirect %d", ret);
-        // }
+        if (ret != XDP_REDIRECT) {
+            bpf_printk("decap redirect %d", ret);
+        }
 
-        // return ret;
-        return XDP_PASS;
+        return ret;
+        // return XDP_PASS;
     }
     else {
         // normal UDP packet.
