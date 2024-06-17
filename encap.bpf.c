@@ -20,11 +20,13 @@
 #ifdef NODE_1
 unsigned char CURR_NODE_MAC[6] = {0x00, 0x22, 0x48, 0x57, 0xf8, 0x20};
 unsigned char OTHER_NODE_MAC[6] = {0x00, 0x22, 0x48, 0x59, 0x9e, 0xbf};
+unsigned char OTHER_POD_MAC[6] = {0x12, 0x64, 0xc7, 0xc3, 0x6f, 0x83};
 unsigned int CURR_NODE_IP = NODE_IP_ADDRESS(6);
 unsigned int OTHER_NODE_IP = NODE_IP_ADDRESS(5);
 #else
 unsigned char CURR_NODE_MAC[6] = {0x00, 0x22, 0x48, 0x59, 0x9e, 0xbf};
 unsigned char OTHER_NODE_MAC[6] = {0x00, 0x22, 0x48, 0x57, 0xf8, 0x20};
+unsigned char OTHER_POD_MAC[6] = {0x66, 0x74, 0x97, 0xde, 0xd4, 0xad};
 unsigned int CURR_NODE_IP = NODE_IP_ADDRESS(5);
 unsigned int OTHER_NODE_IP = NODE_IP_ADDRESS(6);
 
@@ -166,6 +168,10 @@ int encap(struct xdp_md* ctx) {
     }
 
     bpf_printk("Starting encap...");
+
+    for (int i = 0; i < 6; i++) {
+        old_eth->h_dest[i] = OTHER_POD_MAC[i];
+    }
 
     struct iphdr *old_iph = old_data + sizeof(struct ethhdr);                     
     if (old_data + sizeof(struct ethhdr) + sizeof(struct iphdr) > old_data_end) {
