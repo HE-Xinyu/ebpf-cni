@@ -173,7 +173,7 @@ int encap(struct xdp_md* ctx) {
 
     for (int i = 0; i < 6; i++) {
         old_eth->h_dest[i] = OTHER_POD_MAC[i];
-        old_eth->h_source[i] = OTHER_VETH_MAC[i];
+        // old_eth->h_source[i] = OTHER_VETH_MAC[i];
     }
 
     struct iphdr *old_iph = old_data + sizeof(struct ethhdr);                     
