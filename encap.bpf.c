@@ -18,15 +18,18 @@
 #define NODE_1 1
 
 #ifdef NODE_1
-unsigned char CURR_NODE_MAC[6] = {0x00, 0x22, 0x48, 0x57, 0xf8, 0x20};
-unsigned char OTHER_NODE_MAC[6] = {0x00, 0x22, 0x48, 0x59, 0x9e, 0xbf};
+unsigned char CURR_NODE_MAC[6] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc};
+unsigned char OTHER_NODE_MAC[6] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc};
+// unsigned char OTHER_NODE_MAC[6] = {0x00, 0x22, 0x48, 0x59, 0x9e, 0xbf};
 unsigned char OTHER_VETH_MAC[6] = {0x12, 0x64, 0xc7, 0xc3, 0x6f, 0x83};
 unsigned char OTHER_POD_MAC[6] = {0x6a, 0x79, 0xae, 0xe7, 0x6d, 0xb8};
 unsigned int CURR_NODE_IP = NODE_IP_ADDRESS(6);
 unsigned int OTHER_NODE_IP = NODE_IP_ADDRESS(5);
 #else
-unsigned char CURR_NODE_MAC[6] = {0x00, 0x22, 0x48, 0x59, 0x9e, 0xbf};
-unsigned char OTHER_NODE_MAC[6] = {0x00, 0x22, 0x48, 0x57, 0xf8, 0x20};
+unsigned char CURR_NODE_MAC[6] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc};
+unsigned char OTHER_NODE_MAC[6] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc};
+// unsigned char CURR_NODE_MAC[6] = {0x00, 0x22, 0x48, 0x59, 0x9e, 0xbf};
+// unsigned char OTHER_NODE_MAC[6] = {0x00, 0x22, 0x48, 0x57, 0xf8, 0x20};
 unsigned char OTHER_VETH_MAC[6] = {0x66, 0x74, 0x97, 0xde, 0xd4, 0xad};
 unsigned char OTHER_POD_MAC[6] = {0xfe, 0x9b, 0xb0, 0x31, 0x95, 0x60};
 unsigned int CURR_NODE_IP = NODE_IP_ADDRESS(5);
@@ -109,51 +112,8 @@ static inline __u16 caludpcsum(struct iphdr *iph, struct udphdr *udph, void *dat
 }
 
 
-unsigned char lookup_protocol(struct xdp_md *ctx)
-{
-   unsigned char protocol = 0;
-
-   void *data = (void *)(long)ctx->data;                                    
-   void *data_end = (void *)(long)ctx->data_end;
-   struct ethhdr *eth = data;                                               
-   if (data + sizeof(struct ethhdr) > data_end)                             
-       return 0;
-
-   // Check that it's an IP packet
-   if (bpf_ntohs(eth->h_proto) == ETH_P_IP)                                 
-   {
-       // Return the protocol of this packet
-       // 1 = ICMP
-       // 6 = TCP
-       // 17 = UDP       
-       struct iphdr *iph = data + sizeof(struct ethhdr);                     
-       if (data + sizeof(struct ethhdr) + sizeof(struct iphdr) <= data_end) 
-           protocol = iph->protocol;                                        
-   }
-   return protocol;
-}
-
-unsigned char lookup_icmp_protocol(struct xdp_md* ctx) {
-    // not icmp
-    if (lookup_protocol(ctx) != 1) {
-        return 6;
-    }
-
-    void *data = (void *)(long)ctx->data;
-    void *data_end = (void *)(long)ctx->data_end;
-
-    struct icmphdr* icmph = data + sizeof(struct ethhdr) + sizeof(struct iphdr);
-
-    if (data + sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct icmphdr) > data_end) {
-        return 6;
-    }
-
-    return icmph->type;
-}
-
 SEC("xdp_encap")                                     
 int encap(struct xdp_md* ctx) {                           
-    bpf_printk("Starting encap 1...");
     void *old_data = (void *)(long)ctx->data;                                    
     void *old_data_end = (void *)(long)ctx->data_end;
     struct ethhdr *old_eth = old_data;                                               
@@ -164,10 +124,10 @@ int encap(struct xdp_md* ctx) {
     }
 
     // only encap IP packet
-    if (bpf_ntohs(old_eth->h_proto) != ETH_P_IP) {
-        bpf_printk("Not IP: 0x%x", bpf_ntohs(old_eth->h_proto));
-        return XDP_PASS;
-    }
+    // if (bpf_ntohs(old_eth->h_proto) != ETH_P_IP) {
+    //     bpf_printk("Not IP: 0x%x", bpf_ntohs(old_eth->h_proto));
+    //     return XDP_PASS;
+    // }
 
     bpf_printk("Starting encap...");
 
@@ -176,11 +136,11 @@ int encap(struct xdp_md* ctx) {
         // old_eth->h_source[i] = OTHER_VETH_MAC[i];
     }
 
-    struct iphdr *old_iph = old_data + sizeof(struct ethhdr);                     
-    if (old_data + sizeof(struct ethhdr) + sizeof(struct iphdr) > old_data_end) {
-        bpf_printk("error");
-        return XDP_DROP;
-    }
+    // struct iphdr *old_iph = old_data + sizeof(struct ethhdr);                     
+    // if (old_data + sizeof(struct ethhdr) + sizeof(struct iphdr) > old_data_end) {
+    //     bpf_printk("error");
+    //     return XDP_DROP;
+    // }
 
     if (bpf_xdp_adjust_head(ctx, 0 - sizeof(struct ethhdr) - sizeof(struct iphdr) - sizeof(struct udphdr))) {
         // fail to expand head
@@ -239,137 +199,6 @@ int encap(struct xdp_md* ctx) {
     }
 
     return ret;
-
-
-    
-
-
-
-
-    // if (data + sizeof(struct ethhdr) > data_end)                             
-    //    return XDP_PASS;
-    // if (protocol == 0) // ICMP Reply
-    // {
-    //     bpf_printk("Hello ping reply");
-    //     // bpf_printk("%x %x", eth->h_source[0], eth->h_source[5]);
-    //     bpf_printk("Src Mac 1: %x %x %x",
-    //         eth->h_source[0],
-    //         eth->h_source[1],
-    //         eth->h_source[2]);
-    //     bpf_printk("Src Mac 2: %x %x %x",
-    //         eth->h_source[3],
-    //         eth->h_source[4],
-    //         eth->h_source[5]);
-    //     bpf_printk("Dest Mac 1: %x %x %x",
-    //         eth->h_dest[0],
-    //         eth->h_dest[1],
-    //         eth->h_dest[2]);
-    //     bpf_printk("Dest Mac 2: %x %x %x",
-    //         eth->h_dest[3],
-    //         eth->h_dest[4],
-    //         eth->h_dest[5]);
-    // }
-    // else if (protocol == 8) {
-    //     bpf_printk("Hello ping request");
-    //     bpf_printk("Src Mac 1: %x %x %x",
-    //         eth->h_source[0],
-    //         eth->h_source[1],
-    //         eth->h_source[2]);
-    //     bpf_printk("Src Mac 2: %x %x %x",
-    //         eth->h_source[3],
-    //         eth->h_source[4],
-    //         eth->h_source[5]);
-    //     bpf_printk("Dest Mac 1: %x %x %x",
-    //         eth->h_dest[0],
-    //         eth->h_dest[1],
-    //         eth->h_dest[2]);
-    //     bpf_printk("Dest Mac 2: %x %x %x",
-    //         eth->h_dest[3],
-    //         eth->h_dest[4],
-    //         eth->h_dest[5]);
-    //     // bpf_printk("Src Mac: %x:%x:%x:%x:%x:%x",
-    //     //     eth->h_source[0],
-    //     //     eth->h_source[1],
-    //     //     eth->h_source[2],
-    //     //     eth->h_source[3],
-    //     //     eth->h_source[4],
-    //     //     eth->h_source[5]);
-    //     // bpf_printk("Dst Mac: %x:%x:%x:%x:%x:%x", 
-    //     //     eth->h_dest[0], 
-    //     //     eth->h_dest[1], 
-    //     //     eth->h_dest[2], 
-    //     //     eth->h_dest[3], 
-    //     //     eth->h_dest[4], 
-    //     //     eth->h_dest[5]);
-    // }
-    // return XDP_PASS;
-//     unsigned char BACKEND_MAC[6] = {0x00, 0x22, 0x48, 0x59, 0x9e, 0xbf};
-//     unsigned char LB_MAC[6] = {0x00, 0x22, 0x48, 0x57, 0xf8, 0x20};
-//     void *data = (void *)(long)ctx->data;
-//     void *data_end = (void *)(long)ctx->data_end;
-
-//     struct ethhdr *eth = data;
-//     if (data + sizeof(struct ethhdr) > data_end)
-//         return XDP_ABORTED;
-
-//     if (bpf_ntohs(eth->h_proto) != ETH_P_IP)
-//         return XDP_PASS;
-
-//     struct iphdr *iph = data + sizeof(struct ethhdr);
-//     if (data + sizeof(struct ethhdr) + sizeof(struct iphdr) > data_end)
-//         return XDP_ABORTED;
-
-//     if (iph->protocol != IPPROTO_TCP)               
-//         return XDP_PASS;
-
-//     // parse TCP
-
-//     struct tcphdr* tcph = data + sizeof(struct ethhdr) + sizeof(struct iphdr);
-//     if (data + sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct tcphdr) > data_end) {
-//         bpf_printk("TCP header error");
-//         return XDP_ABORTED;
-//     }
-
-
-//     if (bpf_ntohs(tcph->dest) == 8080) {
-//         if (iph->saddr == NODE_IP_ADDRESS(BACKEND)) {
-//             // TODO: transfer back to client
-//         }
-
-//         if (bpf_get_prandom_u32() % 2) {
-//             // Local
-//             return XDP_PASS;
-//         }
-//         iph->daddr = NODE_IP_ADDRESS(BACKEND);
-//         iph->saddr = NODE_IP_ADDRESS(LB);
-//         eth->h_source = 
-
-//         iph->check = iph_csum(iph);
-//         return XDP_TX;
-//     }
-
-//     return XDP_PASS;
-
-//     if (iph->saddr == NODE_IP_ADDRESS(CLIENT))           
-//     {
-//         char be = BACKEND_A;                        
-//         if (bpf_get_prandom_u32() % 2)                
-//             be = BACKEND_B;
-
-//         iph->daddr = NODE_IP_ADDRESS(be);                
-//         eth->h_dest[5] = be;
-//     }
-//     else
-//     {
-//         iph->daddr = NODE_IP_ADDRESS(CLIENT);            
-//         eth->h_dest[5] = CLIENT;
-//     }
-//     iph->saddr = NODE_IP_ADDRESS(LB);                    
-//     eth->h_source[5] = LB;
-
-//     iph->check = iph_csum(iph);                     
-
-//     return XDP_TX;
 }
 
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
