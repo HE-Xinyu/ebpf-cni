@@ -37,4 +37,7 @@ clean:
 	rm -f /sys/fs/bpf/encap
 	rm -f /sys/fs/bpf/decap
 	rm -f /sys/fs/bpf/icmp
+	rm -f encap.bpf.o
+	rm -f decap.bpf.o
+	rm -f icmp.bpf.o
 	echo > /sys/kernel/debug/tracing/trace
