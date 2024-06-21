@@ -13,11 +13,11 @@ default:
 	bpftool net detach xdpgeneric dev veth-1
 	rm -f /sys/fs/bpf/encap
 	bpftool prog load encap.bpf.o /sys/fs/bpf/encap
-	bpftool net attach xdpgeneric pinned /sys/fs/bpf/encap dev veth-1
+	bpftool net attach xdpgeneric pinned /sys/fs/bpf/encap dev veth-1 overwrite
 	bpftool net detach xdpgeneric dev eth0
 	rm -f /sys/fs/bpf/decap
 	bpftool prog load decap.bpf.o /sys/fs/bpf/decap
-	bpftool net attach xdpgeneric pinned /sys/fs/bpf/decap dev eth0
+	bpftool net attach xdpgeneric pinned /sys/fs/bpf/decap dev eth0 overwrite
 
 icmp:
 	clang-17 \
@@ -29,7 +29,7 @@ icmp:
 	rm -f /sys/fs/bpf/icmp
 	echo > /sys/kernel/debug/tracing/trace
 	bpftool prog load icmp.bpf.o /sys/fs/bpf/icmp
-	bpftool net attach xdpgeneric pinned /sys/fs/bpf/icmp dev eth0
+	bpftool net attach xdpgeneric pinned /sys/fs/bpf/icmp dev eth0 overwrite
 
 clean:
 	bpftool net detach xdpgeneric dev eth0
