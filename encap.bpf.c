@@ -125,10 +125,10 @@ int encap(struct xdp_md* ctx) {
     }
 
     // only encap IP packet
-    // if (bpf_ntohs(old_eth->h_proto) != ETH_P_IP) {
-    //     bpf_printk("Not IP: 0x%x", bpf_ntohs(old_eth->h_proto));
-    //     return XDP_PASS;
-    // }
+    if (bpf_ntohs(old_eth->h_proto) != ETH_P_IP) {
+        bpf_printk("Not IP: 0x%x", bpf_ntohs(old_eth->h_proto));
+        return XDP_PASS;
+    }
 
     bpf_printk("Starting encap...");
 
@@ -137,11 +137,11 @@ int encap(struct xdp_md* ctx) {
         // old_eth->h_source[i] = OTHER_VETH_MAC[i];
     }
 
-    // struct iphdr *old_iph = old_data + sizeof(struct ethhdr);                     
-    // if (old_data + sizeof(struct ethhdr) + sizeof(struct iphdr) > old_data_end) {
-    //     bpf_printk("error");
-    //     return XDP_DROP;
-    // }
+    struct iphdr *old_iph = old_data + sizeof(struct ethhdr);                     
+    if (old_data + sizeof(struct ethhdr) + sizeof(struct iphdr) > old_data_end) {
+        bpf_printk("error");
+        return XDP_DROP;
+    }
 
     if (bpf_xdp_adjust_head(ctx, 0 - sizeof(struct ethhdr) - sizeof(struct iphdr) - sizeof(struct udphdr))) {
         // fail to expand head
