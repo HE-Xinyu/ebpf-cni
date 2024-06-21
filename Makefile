@@ -9,7 +9,6 @@ default:
 		-I/usr/include/$(shell uname -m)-linux-gnu \
 		-g \
 		-O2 -c decap.bpf.c -o decap.bpf.o
-	echo > /sys/kernel/debug/tracing/trace
 	bpftool net detach xdpgeneric dev veth-1
 	rm -f /sys/fs/bpf/encap
 	bpftool prog load encap.bpf.o /sys/fs/bpf/encap
