@@ -58,7 +58,7 @@ int decap(struct xdp_md* ctx) {
             bpf_printk("decap redirect %d", ret);
         }
 
-        bpf_printk("Redirect...");
+        bpf_printk("Redirecting decap...");
 
         return ret;
     }
