@@ -60,7 +60,6 @@ int log_icmp(struct xdp_md* ctx) {
     }
     else if (icmp_type == ICMP_ECHOREPLY) {
         bpf_printk("Received ICMP ECHO REPLY");
-        return XDP_DROP;
     }
 
     return XDP_PASS;
